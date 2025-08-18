@@ -1,586 +1,519 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Life Organizer</title>
-  <!-- Tailwind -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-  <!-- Chart.js -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-  <style>
-    :root{
-      --glass-light: rgba(255,255,255,.15);
-      --glass-dark: rgba(0,0,0,.20);
-    }
-    *{font-family:'Inter',system-ui, -apple-system, Segoe UI, Roboto, sans-serif}
-    body{min-height:100vh; background-size:cover; background-position:center; background-attachment:fixed; transition:background .5s ease,color .3s ease}
-    .day-theme{background-image:url('https://images.unsplash.com/photo-1500382017468-9049fed747ef?q=80&w=2069&auto=format&fit=crop'); color:#111827}
-    .night-theme{background-image:url('https://images.unsplash.com/photo-1444703686981-a3abbc4d4fe3?q=80&w=2069&auto=format&fit=crop'); color:#F9FAFB}
-    .glass{backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border:1px solid rgba(255,255,255,.25)}
-    .card{border-radius:16px; box-shadow:0 8px 30px rgba(0,0,0,.08)}
-    .hidden-el{display:none}
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Life Organizer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-light: #4f46e5;
+            --primary-dark: #6366f1;
+            --text-light: #1f2937;
+            --text-dark: #f9fafb;
+            --bg-light: #f9fafb;
+            --bg-dark: #1e293b;
+            --card-light: rgba(255, 255, 255, 0.8);
+            --card-dark: rgba(30, 41, 59, 0.8);
+            --border-light: rgba(209, 213, 219, 0.5);
+            --border-dark: rgba(55, 65, 81, 0.5);
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            transition: all 0.3s ease;
+            min-height: 100vh;
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+        }
+
+        .day-theme {
+            background-image: url('https://placehold.co/1920x1080?text=Day+Theme%3A+Bright+sunny+sky+with+white+clouds');
+            color: var(--text-light);
+            background-color: var(--bg-light);
+        }
+
+        .night-theme {
+            background-image: url('https://placehold.co/1920x1080?text=Night+Theme%3A+Dark+blue+sky+with+stars+and+moon');
+            color: var(--text-dark);
+            background-color: var(--bg-dark);
+        }
+
+        .card {
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            transition: transform 0.2s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+        }
+
+        .board-column {
+            min-height: 400px;
+        }
+
+        .task-card {
+            cursor: grab;
+        }
+
+        .task-card:active {
+            cursor: grabbing;
+        }
+
+        .dragging {
+            opacity: 0.5;
+        }
+
+        .weather-icon {
+            width: 40px;
+            height: 40px;
+        }
+
+        .weather-icon-small {
+            width: 24px;
+            height: 24px;
+        }
+
+        /* Glassmorphism effect */
+        .glass {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+        }
+
+        .dark .glass {
+            background: rgba(0, 0, 0, 0.15);
+            border: 1px solid rgba(0, 0, 0, 0.18);
+        }
+    </style>
 </head>
 <body class="day-theme">
-  <!-- LOGIN SCREEN -->
-  <section id="login-screen" class="fixed inset-0 flex items-center justify-center p-6 bg-black/60 z-50">
-    <div class="glass card max-w-sm w-full p-6 bg-white/70 dark:bg-black/40 rounded-2xl">
-      <h1 class="text-2xl font-bold mb-2 text-center">🔐 Life Organizer</h1>
-      <p class="text-sm opacity-80 mb-4 text-center">Digite a senha para entrar</p>
-      <label class="block text-sm mb-1" for="password">Senha</label>
-      <input id="password" type="password" class="w-full p-3 rounded-xl bg-white/80 dark:bg-white/10 border border-white/40 outline-none focus:ring-2 focus:ring-indigo-500" placeholder="••••••••" />
-      <button id="login-btn" class="mt-4 w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold">Entrar</button>
-      <p id="login-error" class="hidden text-red-500 text-sm mt-3">Senha incorreta.</p>
+    <div class="container mx-auto px-4 py-8 max-w-7xl">
+        <!-- Header -->
+        <header class="flex flex-col md:flex-row justify-between items-center mb-8 glass p-6 rounded-xl">
+            <div class="text-center md:text-left mb-4 md:mb-0">
+                <h1 class="text-3xl font-bold">Life Organizer</h1>
+                <p class="text-lg">Sua plataforma de organização pessoal</p>
+            </div>
+            
+            <div class="flex flex-col sm:flex-row gap-4 items-center">
+                <div class="flex items-center gap-2 bg-white/30 dark:bg-black/30 p-3 rounded-lg">
+                    <div id="clock" class="text-xl font-semibold">00:00:00</div>
+                    <div id="date" class="text-sm">Brasil</div>
+                </div>
+                
+                <div class="flex items-center gap-2 bg-white/30 dark:bg-black/30 p-3 rounded-lg">
+                    <img id="weather-icon" class="weather-icon" src="https://placehold.co/40x40" alt="Ícone do clima atual">
+                    <div>
+                        <div id="temperature" class="font-semibold">--°C</div>
+                        <div id="weather-desc" class="text-xs">São Paulo</div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+            <!-- Tasks Board -->
+            <div class="lg:col-span-3 grid grid-cols-1 md:grid-cols-3 gap-4">
+                <!-- Column 1: Metas -->
+                <div class="board-column bg-white/50 dark:bg-gray-800/50 p-4 rounded-xl">
+                    <h2 class="text-xl font-semibold mb-4 flex items-center gap-2">
+                        <span class="p-2 rounded-lg bg-indigo-100 dark:bg-indigo-900 text-indigo-600 dark:text-indigo-300">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+                            </svg>
+                        </span>
+                        Metas
+                    </h2>
+                    <div class="space-y-3" id="goals-column">
+                        <div class="task-card p-3 rounded-lg bg-white dark:bg-gray-700 shadow-sm draggable" draggable="true">
+                            <h3 class="font-medium">Comprar um apartamento</h3>
+                            <p class="text-sm text-gray-600 dark:text-gray-300">Economizar R$ 200.000 até dez/2025</p>
+                            <div class="mt-2 flex justify-between items-center">
+                                <span class="text-xs px-2 py-1 bg-indigo-100 dark:bg-indigo-900 text-indigo-600 dark:text-indigo-300 rounded">Longo Prazo</span>
+                                <span class="text-xs text-gray-500">15/12/2025</span>
+                            </div>
+                        </div>
+                        
+                        <div class="task-card p-3 rounded-lg bg-white dark:bg-gray-700 shadow-sm draggable" draggable="true">
+                            <h3 class="font-medium">Aprender inglês fluente</h3>
+                            <p class="text-sm text-gray-600 dark:text-gray-300">Concluir curso avançado</p>
+                            <div class="mt-2 flex justify-between items-center">
+                                <span class="text-xs px-2 py-1 bg-yellow-100 dark:bg-yellow-900 text-yellow-600 dark:text-yellow-300 rounded">Médio Prazo</span>
+                                <span class="text-xs text-gray-500">30/06/2024</span>
+                            </div>
+                        </div>
+                    </div>
+                    <button class="mt-3 w-full py-2 text-center text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition">
+                        + Adicionar meta
+                    </button>
+                </div>
+                
+                <!-- Column 2: Datas Importantes -->
+                <div class="board-column bg-white/50 dark:bg-gray-800/50 p-4 rounded-xl">
+                    <h2 class="text-xl font-semibold mb-4 flex items-center gap-2">
+                        <span class="p-2 rounded-lg bg-green-100 dark:bg-green-900 text-green-600 dark:text-green-300">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                                <line x1="16" y1="2" x2="16" y2="6"></line>
+                                <line x1="8" y1="2" x2="8" y2="6"></line>
+                                <line x1="3" y1="10" x2="21" y2="10"></line>
+                            </svg>
+                        </span>
+                        Datas
+                    </h2>
+                    <div class="space-y-3" id="dates-column">
+                        <div class="task-card p-3 rounded-lg bg-white dark:bg-gray-700 shadow-sm draggable" draggable="true">
+                            <h3 class="font-medium">Aniversário da esposa</h3>
+                            <p class="text-sm text-gray-600 dark:text-gray-300">Preparar surpresa</p>
+                            <div class="mt-2 flex justify-between items-center">
+                                <span class="text-xs px-2 py-1 bg-red-100 dark:bg-red-900 text-red-600 dark:text-red-300 rounded">Importante</span>
+                                <span class="text-xs text-gray-500">10/11/2023</span>
+                            </div>
+                        </div>
+                        
+                        <div class="task-card p-3 rounded-lg bg-white dark:bg-gray-700 shadow-sm draggable" draggable="true">
+                            <h3 class="font-medium">Consulta médica</h3>
+                            <p class="text-sm text-gray-600 dark:text-gray-300">Check-up anual</p>
+                            <div class="mt-2 flex justify-between items-center">
+                                <span class="text-xs px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300 rounded">Saúde</span>
+                                <span class="text-xs text-gray-500">05/12/2023</span>
+                            </div>
+                        </div>
+                    </div>
+                    <button class="mt-3 w-full py-2 text-center text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition">
+                        + Adicionar data
+                    </button>
+                </div>
+                
+                <!-- Column 3: Finanças -->
+                <div class="board-column bg-white/50 dark:bg-gray-800/50 p-4 rounded-xl">
+                    <h2 class="text-xl font-semibold mb-4 flex items-center gap-2">
+                        <span class="p-2 rounded-lg bg-purple-100 dark:bg-purple-900 text-purple-600 dark:text-purple-300">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <line x1="12" y1="1" x2="12" y2="23"></line>
+                                <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                            </svg>
+                        </span>
+                        Finanças
+                    </h2>
+                    <div class="space-y-3" id="finance-column">
+                        <div class="task-card p-3 rounded-lg bg-white dark:bg-gray-700 shadow-sm draggable" draggable="true">
+                            <h3 class="font-medium">Pagar faculdade</h3>
+                            <p class="text-sm text-gray-600 dark:text-gray-300">Mensalidade curso MBA</p>
+                            <div class="mt-2 flex justify-between items-center">
+                                <span class="text-xs px-2 py-1 bg-purple-100 dark:bg-purple-900 text-purple-600 dark:text-purple-300 rounded">Fixas</span>
+                                <span class="text-xs text-gray-500">05/12/2023</span>
+                            </div>
+                        </div>
+                        
+                        <div class="task-card p-3 rounded-lg bg-white dark:bg-gray-700 shadow-sm draggable" draggable="true">
+                            <h3 class="font-medium">Investir em ETFs</h3>
+                            <p class="text-sm text-gray-600 dark:text-gray-300">R$ 500 por mês</p>
+                            <div class="mt-2 flex justify-between items-center">
+                                <span class="text-xs px-2 py-1 bg-teal-100 dark:bg-teal-900 text-teal-600 dark:text-teal-300 rounded">Investimento</span>
+                                <span class="text-xs text-gray-500">Todo mês</span>
+                            </div>
+                        </div>
+                    </div>
+                    <button class="mt-3 w-full py-2 text-center text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition">
+                        + Adicionar financiamento
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Sidebar -->
+            <div class="space-y-6">
+                <!-- Weekly Weather -->
+                <div class="bg-white/50 dark:bg-gray-800/50 p-4 rounded-xl">
+                    <h2 class="text-xl font-semibold mb-4">Previsão Semanal</h2>
+                    <div class="space-y-3" id="weekly-weather">
+                        <div class="flex justify-between items-center">
+                            <span class="text-sm font-medium">Hoje</span>
+                            <div class="flex items-center gap-2">
+                                <span id="today-temp" class="font-medium">27°C</span>
+                                <img src="https://placehold.co/24x24" alt="Ícone do clima hoje: sol com poucas nuvens" class="weather-icon-small">
+                            </div>
+                        </div>
+                        
+                        <div class="flex justify-between items-center">
+                            <span class="text-sm font-medium">Amanhã</span>
+                            <div class="flex items-center gap-2">
+                                <span id="tomorrow-temp" class="font-medium">25°C</span>
+                                <img src="https://placehold.co/24x24" alt="Ícone do clima amanhã: nublado com possibilidade de chuva" class="weather-icon-small">
+                            </div>
+                        </div>
+                        
+                        <div class="flex justify-between items-center">
+                            <span class="text-sm font-medium">Terça</span>
+                            <div class="flex items-center gap-2">
+                                <span class="font-medium">26°C</span>
+                                <img src="https://placehold.co/24x24" alt="Ícone do clima para Terça: nublado" class="weather-icon-small">
+                            </div>
+                        </div>
+                        
+                        <div class="flex justify-between items-center">
+                            <span class="text-sm font-medium">Quarta</span>
+                            <div class="flex items-center gap-2">
+                                <span class="font-medium">28°C</span>
+                                <img src="https://placehold.co/24x24" alt="Ícone do clima para Quarta: sol" class="weather-icon-small">
+                            </div>
+                        </div>
+                        
+                        <div class="flex justify-between items-center">
+                            <span class="text-sm font-medium">Quinta</span>
+                            <div class="flex items-center gap-2">
+                                <span class="font-medium">24°C</span>
+                                <img src="https://placehold.co/24x24" alt="Ícone do clima para Quinta: chuva" class="weather-icon-small">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Quick Notes -->
+                <div class="bg-white/50 dark:bg-gray-800/50 p-4 rounded-xl">
+                    <h2 class="text-xl font-semibold mb-4">Anotações Rápidas</h2>
+                    <textarea class="w-full p-3 bg-white/80 dark:bg-gray-700/80 rounded-lg border border-gray-200 dark:border-gray-600 focus:border-indigo-500 focus:ring-indigo-500" rows="5" placeholder="Escreva suas anotações aqui..."></textarea>
+                    <button class="mt-2 w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-4 rounded-lg transition">
+                        Salvar
+                    </button>
+                </div>
+                
+                <!-- Progress -->
+                <div class="bg-white/50 dark:bg-gray-800/50 p-4 rounded-xl">
+                    <h2 class="text-xl font-semibold mb-4">Seu Progresso</h2>
+                    <div class="space-y-3">
+                        <div>
+                            <div class="flex justify-between text-sm mb-1">
+                                <span>Metas</span>
+                                <span>25%</span>
+                            </div>
+                            <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                                <div class="bg-indigo-600 h-2 rounded-full" style="width: 25%"></div>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <div class="flex justify-between text-sm mb-1">
+                                <span>Finanças</span>
+                                <span>40%</span>
+                            </div>
+                            <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                                <div class="bg-green-600 h-2 rounded-full" style="width: 40%"></div>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <div class="flex justify-between text-sm mb-1">
+                                <span>Saúde</span>
+                                <span>65%</span>
+                            </div>
+                            <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                                <div class="bg-blue-600 h-2 rounded-full" style="width: 65%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
     </div>
-  </section>
 
-  <!-- APP -->
-  <div id="app" class="container mx-auto px-4 py-8 max-w-7xl hidden-el">
-    <!-- Header -->
-    <header class="glass card p-6 mb-8 rounded-2xl bg-white/60 dark:bg-black/40">
-      <div class="flex flex-col md:flex-row justify-between items-center gap-4">
-        <div class="text-center md:text-left">
-          <h1 class="text-3xl font-bold">Life Organizer</h1>
-          <p class="opacity-80">Sua plataforma de organização pessoal</p>
-        </div>
-        <div class="flex flex-col sm:flex-row items-center gap-3">
-          <div class="flex items-center gap-3 px-4 py-2 rounded-xl bg-white/40 dark:bg-black/30">
-            <i class="fa-regular fa-clock opacity-70"></i>
-            <div>
-              <div id="clock" class="text-lg font-semibold">00:00:00</div>
-              <div id="date" class="text-xs opacity-80">Brasil</div>
-            </div>
-          </div>
-          <div class="flex items-center gap-3 px-4 py-2 rounded-xl bg-white/40 dark:bg-black/30">
-            <img id="weather-icon" alt="Clima" class="w-8 h-8" src=""/>
-            <div>
-              <div id="temperature" class="font-semibold">--°C</div>
-              <div id="weather-desc" class="text-xs opacity-80">São Paulo</div>
-            </div>
-          </div>
-          <button id="logout" class="px-3 py-2 rounded-lg bg-gray-200/70 hover:bg-gray-200 dark:bg-white/10 dark:hover:bg-white/20">Sair</button>
-        </div>
-      </div>
-      
-      <!-- Nav -->
-      <nav class="mt-6 flex flex-wrap gap-2">
-        <button data-tab="board" class="tab active px-4 py-2 rounded-xl bg-indigo-600 text-white">Quadros</button>
-        <button data-tab="calendar" class="tab px-4 py-2 rounded-xl bg-white/60 dark:bg-white/10">Calendário</button>
-        <button data-tab="analytics" class="tab px-4 py-2 rounded-xl bg-white/60 dark:bg-white/10">Gráficos</button>
-        <button data-tab="settings" class="tab px-4 py-2 rounded-xl bg-white/60 dark:bg-white/10">Configurações</button>
-      </nav>
-    </header>
-
-    <!-- CONTENT -->
-    <main>
-      <!-- BOARD -->
-      <section id="tab-board" class="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        <div class="lg:col-span-3 grid grid-cols-1 md:grid-cols-3 gap-4">
-          <!-- Metas -->
-          <div class="p-4 rounded-2xl glass card bg-white/50 dark:bg-black/30">
-            <h2 class="text-xl font-semibold mb-4 flex items-center gap-2"><span class="p-2 rounded-lg bg-indigo-100/70 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300"><i class="fas fa-bullseye"></i></span> Metas</h2>
-            <div id="goals-column" class="space-y-3"></div>
-            <button onclick="openModal('goal')" class="mt-3 w-full py-2 text-sm rounded-lg hover:bg-white/50 dark:hover:bg-white/10"><i class="fas fa-plus mr-1"></i>Adicionar meta</button>
-          </div>
-          <!-- Datas -->
-          <div class="p-4 rounded-2xl glass card bg-white/50 dark:bg-black/30">
-            <h2 class="text-xl font-semibold mb-4 flex items-center gap-2"><span class="p-2 rounded-lg bg-green-100/70 dark:bg-green-900/50 text-green-700 dark:text-green-300"><i class="fas fa-calendar-alt"></i></span> Datas</h2>
-            <div id="dates-column" class="space-y-3"></div>
-            <button onclick="openModal('date')" class="mt-3 w-full py-2 text-sm rounded-lg hover:bg-white/50 dark:hover:bg-white/10"><i class="fas fa-plus mr-1"></i>Adicionar data</button>
-          </div>
-          <!-- Finanças -->
-          <div class="p-4 rounded-2xl glass card bg-white/50 dark:bg-black/30">
-            <h2 class="text-xl font-semibold mb-4 flex items-center gap-2"><span class="p-2 rounded-lg bg-purple-100/70 dark:bg-purple-900/50 text-purple-700 dark:text-purple-300"><i class="fas fa-money-bill-wave"></i></span> Finanças</h2>
-            <div id="finance-column" class="space-y-3"></div>
-            <button onclick="openModal('finance')" class="mt-3 w-full py-2 text-sm rounded-lg hover:bg-white/50 dark:hover:bg-white/10"><i class="fas fa-plus mr-1"></i>Adicionar financiamento</button>
-          </div>
-        </div>
-        <!-- Sidebar -->
-        <aside class="space-y-6">
-          <!-- Semana clima -->
-          <div class="p-4 rounded-2xl glass card bg-white/50 dark:bg-black/30">
-            <h3 class="text-lg font-semibold mb-3">Previsão Semanal</h3>
-            <div id="weekly-weather" class="space-y-3"></div>
-          </div>
-          <!-- Notas rápidas -->
-          <div class="p-4 rounded-2xl glass card bg-white/50 dark:bg-black/30">
-            <h3 class="text-lg font-semibold mb-3">Anotações Rápidas</h3>
-            <textarea id="quick-notes" rows="5" class="w-full p-3 rounded-xl bg-white/80 dark:bg-white/10 border border-white/40"></textarea>
-            <button onclick="saveNote()" class="mt-2 w-full py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white"><i class="fas fa-save mr-1"></i>Salvar</button>
-          </div>
-          <!-- Progresso -->
-          <div class="p-4 rounded-2xl glass card bg-white/50 dark:bg-black/30">
-            <h3 class="text-lg font-semibold mb-3">Seu Progresso</h3>
-            <div id="progress-tracker" class="space-y-3"></div>
-          </div>
-        </aside>
-      </section>
-
-      <!-- CALENDAR -->
-      <section id="tab-calendar" class="hidden-el">
-        <div class="glass card p-4 rounded-2xl bg-white/60 dark:bg-black/30">
-          <div class="flex items-center justify-between mb-4">
-            <div class="flex items-center gap-2">
-              <button id="prev-month" class="px-3 py-2 rounded-lg bg-white/60 dark:bg-white/10"><i class="fa-solid fa-chevron-left"></i></button>
-              <h3 id="calendar-title" class="text-xl font-semibold"></h3>
-              <button id="next-month" class="px-3 py-2 rounded-lg bg-white/60 dark:bg-white/10"><i class="fa-solid fa-chevron-right"></i></button>
-            </div>
-            <button onclick="openModal('date')" class="px-4 py-2 rounded-xl bg-indigo-600 text-white">Nova data</button>
-          </div>
-          <div id="calendar-grid" class="grid grid-cols-7 gap-2"></div>
-        </div>
-      </section>
-
-      <!-- ANALYTICS -->
-      <section id="tab-analytics" class="hidden-el">
-        <div class="grid md:grid-cols-2 gap-6">
-          <div class="glass card p-4 rounded-2xl bg-white/60 dark:bg-black/30">
-            <h3 class="font-semibold mb-3">Finanças por tipo</h3>
-            <canvas id="financeChart" height="200"></canvas>
-          </div>
-          <div class="glass card p-4 rounded-2xl bg-white/60 dark:bg-black/30">
-            <h3 class="font-semibold mb-3">Metas (concluídas x totais no mês)</h3>
-            <canvas id="goalsChart" height="200"></canvas>
-          </div>
-        </div>
-      </section>
-
-      <!-- SETTINGS -->
-      <section id="tab-settings" class="hidden-el">
-        <div class="glass card p-4 rounded-2xl bg-white/60 dark:bg-black/30 space-y-4">
-          <h3 class="text-lg font-semibold">Configurações</h3>
-          <div class="flex items-center gap-3">
-            <button id="request-notify" class="px-4 py-2 rounded-xl bg-white/60 dark:bg-white/10">Permitir notificações</button>
-            <button id="test-notify" class="px-4 py-2 rounded-xl bg-white/60 dark:bg-white/10">Testar notificação</button>
-          </div>
-          <div class="flex items-center gap-3">
-            <button id="export-json" class="px-4 py-2 rounded-xl bg-white/60 dark:bg-white/10">Exportar dados</button>
-            <label class="px-4 py-2 rounded-xl bg-white/60 dark:bg-white/10 cursor-pointer">Importar JSON
-              <input id="import-json" type="file" accept="application/json" class="hidden">
-            </label>
-          </div>
-        </div>
-      </section>
-    </main>
-  </div>
-
-  <!-- MODAL ITENS -->
-  <div id="modal" class="fixed inset-0 hidden items-center justify-center bg-black/50 z-40">
-    <div class="modal-content glass card bg-white/80 dark:bg-black/40 p-6 rounded-2xl w-[90%] max-w-lg">
-      <div class="flex justify-between items-center mb-4">
-        <h3 id="modal-title" class="text-xl font-bold">Adicionar Item</h3>
-        <button onclick="closeModal()" class="opacity-70 hover:opacity-100"><i class="fas fa-times"></i></button>
-      </div>
-      <form id="modal-form" class="space-y-3">
-        <input type="hidden" id="item-type">
-        <input type="hidden" id="item-id">
-        <div>
-          <label class="text-sm">Título</label>
-          <input id="title" class="w-full p-3 rounded-xl bg-white/90 dark:bg-white/10 border border-white/40" required>
-        </div>
-        <div>
-          <label class="text-sm">Descrição</label>
-          <textarea id="description" rows="2" class="w-full p-3 rounded-xl bg-white/90 dark:bg-white/10 border border-white/40"></textarea>
-        </div>
-        <div id="due-date-container" class="hidden">
-          <label class="text-sm">Data</label>
-          <input type="date" id="due-date" class="w-full p-3 rounded-xl bg-white/90 dark:bg-white/10 border border-white/40">
-        </div>
-        <div id="category-container" class="hidden">
-          <label class="text-sm">Categoria</label>
-          <select id="category" class="w-full p-3 rounded-xl bg-white/90 dark:bg-white/10 border border-white/40">
-            <option value="short">Curto Prazo</option>
-            <option value="medium">Médio Prazo</option>
-            <option value="long">Longo Prazo</option>
-          </select>
-        </div>
-        <div id="finance-type-container" class="hidden">
-          <label class="text-sm">Tipo</label>
-          <select id="finance-type" class="w-full p-3 rounded-xl bg-white/90 dark:bg-white/10 border border-white/40">
-            <option value="fixed">Fixas</option>
-            <option value="investment">Investimento</option>
-            <option value="expense">Despesa</option>
-          </select>
-        </div>
-        <div id="priority-container" class="hidden">
-          <label class="text-sm">Prioridade</label>
-          <select id="priority" class="w-full p-3 rounded-xl bg-white/90 dark:bg-white/10 border border-white/40">
-            <option value="low">Baixa</option>
-            <option value="medium">Média</option>
-            <option value="high">Alta</option>
-          </select>
-        </div>
-        <div class="flex justify-end gap-2 pt-3">
-          <button type="button" onclick="closeModal()" class="px-4 py-2 rounded-xl bg-white/60 dark:bg-white/10">Cancelar</button>
-          <button type="submit" class="px-4 py-2 rounded-xl bg-indigo-600 text-white">Salvar</button>
-        </div>
-      </form>
-    </div>
-  </div>
-
-  <script>
-    // ====== CONFIG ======
-    const PASSWORD = 'anaflavia1723';
-    const WEATHER_URL = 'https://api.open-meteo.com/v1/forecast?latitude=-23.5475&longitude=-46.6361&current=temperature_2m,weather_code&daily=temperature_2m_max,temperature_2m_min,weather_code&timezone=America%2FSao_Paulo';
-
-    // ====== STATE ======
-    const state = {
-      items: { goal: [], date: [], finance: [] },
-      notes: '',
-      theme: 'light',
-    };
-
-    // ====== INIT ======
-    document.addEventListener('DOMContentLoaded', () => {
-      // Auth
-      if (localStorage.getItem('lifeOrganizerAuth') === 'true') {
-        showApp();
-      } else {
-        document.getElementById('login-screen').classList.remove('hidden');
-      }
-
-      document.getElementById('login-btn').addEventListener('click', doLogin);
-      document.getElementById('password').addEventListener('keydown', (e)=>{ if(e.key==='Enter') doLogin(); });
-      document.getElementById('logout').addEventListener('click', ()=>{ localStorage.removeItem('lifeOrganizerAuth'); location.reload(); });
-
-      // Tabs
-      document.querySelectorAll('.tab').forEach(btn=>btn.addEventListener('click', switchTab));
-
-      // Calendar nav
-      document.getElementById('prev-month').addEventListener('click', ()=>shiftMonth(-1));
-      document.getElementById('next-month').addEventListener('click', ()=>shiftMonth(1));
-
-      // Settings
-      document.getElementById('request-notify').addEventListener('click', requestNotification);
-      document.getElementById('test-notify').addEventListener('click', ()=>notify('Teste','Isso é uma notificação de teste.'));
-      document.getElementById('export-json').addEventListener('click', exportJSON);
-      document.getElementById('import-json').addEventListener('change', importJSON);
-
-      // Modal form
-      document.getElementById('modal-form').addEventListener('submit', handleFormSubmit);
-    });
-
-    function showApp(){
-      loadData();
-      document.getElementById('login-screen').classList.add('hidden');
-      document.getElementById('app').classList.remove('hidden-el');
-
-      updateTheme();
-      updateClock();
-      fetchWeather();
-      renderAll();
-      buildCalendar();
-      updateCharts();
-      checkUpcomingNotifications();
-
-      setInterval(updateClock, 1000);
-      setInterval(updateTheme, 60000);
-      setInterval(fetchWeather, 60*60*1000);
-      setInterval(checkUpcomingNotifications, 60*60*1000);
-    }
-
-    // ====== AUTH ======
-    function doLogin(){
-      const pass = document.getElementById('password').value.trim();
-      if(pass === PASSWORD){
-        localStorage.setItem('lifeOrganizerAuth','true');
-        showApp();
-      } else {
-        const el = document.getElementById('login-error');
-        el.classList.remove('hidden');
-        setTimeout(()=>el.classList.add('hidden'), 2000);
-      }
-    }
-
-    // ====== STORAGE ======
-    function loadData(){
-      const saved = localStorage.getItem('lifeOrganizer');
-      if(saved){
-        const data = JSON.parse(saved);
-        state.items = data.items || state.items;
-        state.notes = data.notes || '';
-        state.theme = data.theme || 'light';
-      }
-      document.getElementById('quick-notes').value = state.notes;
-    }
-    function saveData(){
-      localStorage.setItem('lifeOrganizer', JSON.stringify({items:state.items, notes:state.notes, theme:state.theme}));
-    }
-
-    // ====== THEME & CLOCK ======
-    function updateTheme(){
-      const hour = new Date().toLocaleString('pt-BR',{hour:'2-digit', hour12:false, timeZone:'America/Sao_Paulo'});
-      const h = parseInt(hour,10);
-      const body = document.body;
-      if(h >= 18 || h < 6){
-        body.classList.remove('day-theme'); body.classList.add('night-theme'); document.documentElement.classList.add('dark'); state.theme='dark';
-      } else {
-        body.classList.remove('night-theme'); body.classList.add('day-theme'); document.documentElement.classList.remove('dark'); state.theme='light';
-      }
-      saveData();
-    }
-    function updateClock(){
-      const now = new Date();
-      const timeStr = now.toLocaleTimeString('pt-BR',{timeZone:'America/Sao_Paulo', hour12:false});
-      const dateStr = now.toLocaleDateString('pt-BR',{timeZone:'America/Sao_Paulo'});
-      const weekday = now.toLocaleDateString('pt-BR',{weekday:'long'});
-      document.getElementById('clock').textContent = timeStr;
-      document.getElementById('date').textContent = `${weekday}, ${dateStr}`;
-    }
-
-    // ====== WEATHER (Open-Meteo) ======
-    async function fetchWeather(){
-      try{
-        const res = await fetch(WEATHER_URL);
-        const data = await res.json();
-        // current
-        const temp = Math.round(data.current?.temperature_2m ?? 0);
-        const wcode = data.current?.weather_code ?? 0;
-        const { icon, desc } = mapWeatherCode(wcode);
-        document.getElementById('temperature').textContent = `${temp}°C`;
-        document.getElementById('weather-desc').textContent = desc;
-        document.getElementById('weather-icon').src = icon;
-        document.getElementById('weather-icon').alt = desc;
-        // weekly
-        const weekly = document.getElementById('weekly-weather');
-        weekly.innerHTML='';
-        const days = data.daily?.time || [];
-        const tmax = data.daily?.temperature_2m_max || [];
-        const tmin = data.daily?.temperature_2m_min || [];
-        const wcodes = data.daily?.weather_code || [];
-        days.slice(0,7).forEach((d,i)=>{
-          const date = new Date(d);
-          const label = i===0 ? 'Hoje' : (i===1 ? 'Amanhã' : date.toLocaleDateString('pt-BR',{weekday:'short'}));
-          const m = mapWeatherCode(wcodes[i] ?? 0);
-          const row = document.createElement('div');
-          row.className='flex items-center justify-between';
-          row.innerHTML = `
-            <span class="text-sm font-medium">${label}</span>
-            <div class="flex items-center gap-2">
-              <span class="text-sm">${Math.round(tmin[i])}° / <strong>${Math.round(tmax[i])}°</strong></span>
-              <img src="${m.icon}" alt="${m.desc}" class="w-6 h-6"/>
-            </div>`;
-          weekly.appendChild(row);
-        });
-      }catch(err){
-        console.error('Erro clima', err);
-      }
-    }
-    function mapWeatherCode(code){
-      // Minimal map based on Open-Meteo weather codes
-      // 0 clear, 1-3 partly cloudy, 45/48 fog, 51-57 drizzle, 61-67 rain, 71-77 snow, 80-82 showers, 95-99 thunder
-      const map=[
-        {r:/^0$/, d:'Céu limpo', i:'☀️'},
-        {r:/^(1|2|3)$/ , d:'Parcialmente nublado', i:'⛅'},
-        {r:/^(45|48)$/ , d:'Nevoeiro', i:'🌫️'},
-        {r:/^(51|53|55|56|57)$/ , d:'Garoa', i:'🌦️'},
-        {r:/^(61|63|65|66|67)$/ , d:'Chuva', i:'🌧️'},
-        {r:/^(71|73|75|77)$/ , d:'Neve', i:'🌨️'},
-        {r:/^(80|81|82)$/ , d:'Aguaceiros', i:'🌧️'},
-        {r:/^(95|96|99)$/ , d:'Tempestade', i:'⛈️'},
-      ];
-      const found = map.find(m=>m.r.test(String(code)) ) || map[0];
-      // Using emoji as icon for leveza; você pode trocar por imagens
-      return {desc:found.d, icon:`https://dummyimage.com/64x64/ffffff/000000.png&text=${encodeURIComponent(found.i)}`};
-    }
-
-    // ====== NOTES ======
-    function saveNote(){
-      state.notes = document.getElementById('quick-notes').value; saveData();
-      const btn = document.querySelector('#quick-notes + button');
-      btn.innerHTML='<i class="fas fa-check mr-1"></i>Salvo!';
-      setTimeout(()=>btn.innerHTML='<i class="fas fa-save mr-1"></i>Salvar',1500);
-    }
-
-    // ====== CRUD ITEMS ======
-    function openModal(type, id=null){
-      const modal = document.getElementById('modal');
-      const titleEl = document.getElementById('modal-title');
-      const form = document.getElementById('modal-form');
-      form.reset();
-      ['due-date','category','finance-type','priority'].forEach(k=>document.getElementById(k+'-container').classList.add('hidden'));
-      document.getElementById('item-type').value = type;
-      document.getElementById('item-id').value = id || '';
-      if(id){
-        const item = state.items[type].find(x=>x.id===id);
-        if(item){
-          document.getElementById('title').value = item.title;
-          document.getElementById('description').value = item.description || '';
-          if(item.dueDate){ document.getElementById('due-date-container').classList.remove('hidden'); document.getElementById('due-date').value=item.dueDate; }
-          if(item.category){ document.getElementById('category-container').classList.remove('hidden'); document.getElementById('category').value=item.category; }
-          if(item.financeType){ document.getElementById('finance-type-container').classList.remove('hidden'); document.getElementById('finance-type').value=item.financeType; }
-          if(item.priority){ document.getElementById('priority-container').classList.remove('hidden'); document.getElementById('priority').value=item.priority; }
+    <script>
+        // Theme switcher based on time
+        function updateTheme() {
+            const now = new Date();
+            const hour = now.getHours();
+            const body = document.body;
+            
+            // Switch to night theme between 18:00 (6 PM) and 6:00 (6 AM)
+            if (hour >= 18 || hour < 6) {
+                body.classList.remove('day-theme');
+                body.classList.add('night-theme');
+                document.documentElement.classList.add('dark');
+            } else {
+                body.classList.remove('night-theme');
+                body.classList.add('day-theme');
+                document.documentElement.classList.remove('dark');
+            }
         }
-        titleEl.textContent = 'Editar ' + getTypeName(type);
-      } else {
-        if(type==='goal') document.getElementById('category-container').classList.remove('hidden');
-        if(type==='date'){ document.getElementById('due-date-container').classList.remove('hidden'); document.getElementById('priority-container').classList.remove('hidden'); }
-        if(type==='finance'){ document.getElementById('due-date-container').classList.remove('hidden'); document.getElementById('finance-type-container').classList.remove('hidden'); }
-        titleEl.textContent = 'Adicionar ' + getTypeName(type);
-      }
-      modal.classList.remove('hidden'); modal.classList.add('flex');
-    }
-    function closeModal(){ document.getElementById('modal').classList.add('hidden'); }
-    function getTypeName(type){ return {goal:'Meta', date:'Data', finance:'Financiamento'}[type] || 'Item'; }
 
-    function handleFormSubmit(e){
-      e.preventDefault();
-      const type = document.getElementById('item-type').value;
-      const id = document.getElementById('item-id').value;
-      const item = {
-        id: id || Date.now().toString(),
-        title: document.getElementById('title').value,
-        description: document.getElementById('description').value,
-        createdAt: new Date().toISOString()
-      };
-      const dueDate = document.getElementById('due-date').value; if(dueDate) item.dueDate = dueDate;
-      const category = document.getElementById('category').value; if(category) item.category = category;
-      const ftype = document.getElementById('finance-type').value; if(ftype) item.financeType = ftype;
-      const prio = document.getElementById('priority').value; if(prio) item.priority = prio;
-      if(id){
-        const idx = state.items[type].findIndex(x=>x.id===id); if(idx>-1) state.items[type][idx]=item;
-      } else { state.items[type].push(item); }
-      saveData(); renderAll(); buildCalendar(); updateCharts(); closeModal();
-    }
-    function deleteItem(type,id){
-      if(confirm('Excluir este item?')){ state.items[type] = state.items[type].filter(x=>x.id!==id); saveData(); renderAll(); buildCalendar(); updateCharts(); }
-    }
+        // Update clock with Brazil timezone
+        function updateClock() {
+            const now = new Date();
+            
+            // Format time for Brazil timezone (America/Sao_Paulo)
+            const options = { 
+                timeZone: 'America/Sao_Paulo',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: false
+            };
+            
+            const dateOptions = {
+                timeZone: 'America/Sao_Paulo',
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric'
+            };
+            
+            // Format time (HH:MM:SS)
+            const timeString = now.toLocaleTimeString('pt-BR', options);
+            document.getElementById('clock').textContent = timeString;
+            
+            // Format date (DD/MM/YYYY)
+            const dateString = now.toLocaleDateString('pt-BR', dateOptions);
+            document.getElementById('date').textContent = dateString;
+        }
 
-    function renderAll(){ renderColumn('goal'); renderColumn('date'); renderColumn('finance'); renderProgressTracker(); }
+        // Simulated weather data for São Paulo
+        function updateWeather() {
+            const weatherIcons = {
+                'clear-day': '☀️',
+                'cloudy': '☁️',
+                'partly-cloudy': '⛅',
+                'rain': '🌧️',
+                'thunderstorm': '⛈️',
+                'snow': '❄️',
+                'fog': '🌫️'
+            };
+            
+            const weatherData = {
+                current: {
+                    temp: "27",
+                    desc: "Parcialmente nublado",
+                    icon: "https://placehold.co/40x40?text=⛅"
+                },
+                forecast: [
+                    { day: "Hoje", temp: "27°C", icon: "https://placehold.co/24x24?text=⛅", desc: "Parcialmente nublado" },
+                    { day: "Amanhã", temp: "25°C", icon: "https://placehold.co/24x24?text=🌧️", desc: "Chuva leve" },
+                    { day: "Terça", temp: "26°C", icon: "https://placehold.co/24x24?text=☁️", desc: "Nublado" },
+                    { day: "Quarta", temp: "28°C", icon: "https://placehold.co/24x24?text=☀️", desc: "Ensolarado" },
+                    { day: "Quinta", temp: "24°C", icon: "https://placehold.co/24x24?text=🌧️", desc: "Chuva" }
+                ]
+            };
 
-    function renderColumn(type){
-      const col = document.getElementById(type+'-column'); col.innerHTML='';
-      state.items[type].forEach(item=>{
-        const wrap = document.createElement('div');
-        wrap.className='task-card p-3 rounded-xl bg-white/85 dark:bg-white/10 border border-white/30';
-        let badge='';
-        if(type==='goal' && item.category){ badge = `<span class="text-xs px-2 py-1 rounded bg-indigo-100 text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-200">${getCategoryName(type,item.category)}</span>`; }
-        if(type==='date' && item.priority){ const map={high:['bg-red-100 text-red-700','Alta'],medium:['bg-yellow-100 text-yellow-700','Média'],low:['bg-blue-100 text-blue-700','Baixa']}; const m=map[item.priority]; if(m) badge = `<span class="text-xs px-2 py-1 rounded ${m[0]} dark:bg-white/10 dark:text-white/90">${m[1]}</span>`; }
-        if(type==='finance' && item.financeType){ const map={fixed:['Fixas','bg-purple-100 text-purple-700'],investment:['Investimento','bg-teal-100 text-teal-700'],expense:['Despesa','bg-orange-100 text-orange-700']}; const m=map[item.financeType]; if(m) badge = `<span class="text-xs px-2 py-1 rounded ${m[1]} dark:bg-white/10 dark:text-white/90">${m[0]}</span>`; }
-        const due = item.dueDate ? new Date(item.dueDate).toLocaleDateString('pt-BR') : '';
-        wrap.innerHTML = `
-          <div class="flex justify-between items-center">
-            <h4 class="font-medium">${item.title}</h4>
-            <div class="flex gap-2 text-gray-500">
-              <button onclick="openModal('${type}','${item.id}')"><i class="fa-solid fa-pen text-xs"></i></button>
-              <button onclick="deleteItem('${type}','${item.id}')"><i class="fa-solid fa-trash text-xs"></i></button>
-            </div>
-          </div>
-          ${item.description?`<p class="text-sm opacity-80 mt-1">${item.description}</p>`:''}
-          <div class="mt-2 flex justify-between items-center">
-            ${badge}
-            ${due?`<span class="text-xs opacity-70">${due}</span>`:''}
-          </div>`;
-        col.appendChild(wrap);
-      });
-    }
-    function getCategoryName(type,cat){
-      const names={goal:{short:'Curto Prazo',medium:'Médio Prazo',long:'Longo Prazo'}}; return names[type]?.[cat] || cat;
-    }
+            // Update current weather
+            document.getElementById('temperature').textContent = `${weatherData.current.temp}°C`;
+            document.getElementById('weather-desc').textContent = weatherData.current.desc;
+            document.getElementById('weather-icon').src = weatherData.current.icon;
+            document.getElementById('weather-icon').alt = `Ícone do clima: ${weatherData.current.desc}`;
 
-    // ====== PROGRESS ======
-    function renderProgressTracker(){
-      const c = document.getElementById('progress-tracker'); c.innerHTML='';
-      const total = {goal: state.items.goal.length, date: state.items.date.length, finance: state.items.finance.length};
-      const doneCount = (arr)=>arr.filter(x=>x.dueDate && new Date(x.dueDate) < new Date()).length;
-      const prog = {goal: total.goal? Math.round(100*doneCount(state.items.goal)/total.goal):0, date: total.date? Math.round(100*doneCount(state.items.date)/total.date):0, finance: total.finance? Math.round(100*doneCount(state.items.finance)/total.finance):0};
-      const blocks=[['Metas','indigo',prog.goal,total.goal],['Datas','green',prog.date,total.date],['Finanças','purple',prog.finance,total.finance]];
-      blocks.forEach(([name,color,val,total])=>{
-        const wrap=document.createElement('div');
-        wrap.innerHTML=`<div class='flex justify-between text-sm mb-1'><span>${name}</span><span>${val}%</span></div>
-          <div class='w-full h-2 rounded-full bg-white/40 dark:bg-white/10'><div class='h-2 rounded-full bg-${color}-600' style='width:${val}%'></div></div>
-          <div class='text-xs opacity-70 mt-1'>${total} itens</div>`;
-        c.appendChild(wrap);
-      });
-    }
+            // Update forecast
+            const forecastContainer = document.getElementById('weekly-weather');
+            forecastContainer.innerHTML = '';
 
-    // ====== CALENDAR (Monthly) ======
-    let calRef = new Date(); // current month reference
-    function buildCalendar(){
-      const grid = document.getElementById('calendar-grid'); grid.innerHTML='';
-      const y = calRef.getFullYear(); const m = calRef.getMonth();
-      document.getElementById('calendar-title').textContent = calRef.toLocaleDateString('pt-BR',{month:'long', year:'numeric'});
-      // headers
-      ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'].forEach(w=>{
-        const h=document.createElement('div'); h.className='text-xs uppercase opacity-70 px-2'; h.textContent=w; grid.appendChild(h);
-      });
-      const first = new Date(y,m,1); const start = (first.getDay()+7)%7; const daysInMonth = new Date(y,m+1,0).getDate();
-      for(let i=0;i<start;i++){ const empty=document.createElement('div'); empty.className='p-2'; grid.appendChild(empty); }
-      for(let d=1; d<=daysInMonth; d++){
-        const cell=document.createElement('div'); cell.className='p-2 rounded-xl bg-white/60 dark:bg-white/10 min-h-[88px] border border-white/30';
-        const top=`<div class='flex justify-between text-xs mb-1'><span class='font-semibold'>${d}</span></div>`;
-        const dateStr = `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-        const items = [
-          ...state.items.goal.filter(x=>x.dueDate===dateStr),
-          ...state.items.date.filter(x=>x.dueDate===dateStr),
-          ...state.items.finance.filter(x=>x.dueDate===dateStr),
-        ];
-        let list='';
-        items.slice(0,3).forEach(it=>{ list += `<div class='truncate text-[11px] leading-4 my-0.5'>• ${it.title}</div>`; });
-        if(items.length>3) list += `<div class='text-[10px] opacity-70'>+${items.length-3} mais</div>`;
-        cell.innerHTML = top + list;
-        grid.appendChild(cell);
-      }
-    }
-    function shiftMonth(delta){ calRef = new Date(calRef.getFullYear(), calRef.getMonth()+delta, 1); buildCalendar(); }
+            weatherData.forecast.forEach(day => {
+                const dayElement = document.createElement('div');
+                dayElement.className = 'flex justify-between items-center';
+                dayElement.innerHTML = `
+                    <span class="text-sm font-medium">${day.day}</span>
+                    <div class="flex items-center gap-2">
+                        <span class="font-medium">${day.temp}</span>
+                        <img src="${day.icon}" alt="Ícone do clima para ${day.day}: ${day.desc}" class="weather-icon-small">
+                    </div>
+                `;
+                forecastContainer.appendChild(dayElement);
+            });
+        }
 
-    // ====== ANALYTICS (Charts) ======
-    let financeChart, goalsChart;
-    function updateCharts(){
-      // Finance pie
-      const counts = {fixed:0, investment:0, expense:0};
-      state.items.finance.forEach(f=>{ if(f.financeType && counts[f.financeType]!=null) counts[f.financeType]++; });
-      const fctx = document.getElementById('financeChart');
-      if(financeChart) financeChart.destroy();
-      financeChart = new Chart(fctx, { type:'pie', data:{ labels:['Fixas','Investimento','Despesa'], datasets:[{ data:[counts.fixed, counts.investment, counts.expense] }] }, options:{ responsive:true, plugins:{ legend:{ position:'bottom' } } });
-      // Goals bar (this month)
-      const now = new Date(); const ym = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
-      const totalGoals = state.items.goal.filter(g=> (g.dueDate||'').startsWith(ym)).length;
-      const doneGoals = state.items.goal.filter(g=> (g.dueDate||'').startsWith(ym) && new Date(g.dueDate) < new Date()).length;
-      const gctx = document.getElementById('goalsChart');
-      if(goalsChart) goalsChart.destroy();
-      goalsChart = new Chart(gctx, { type:'bar', data:{ labels:['Concluídas','Pendentes'], datasets:[{ data:[doneGoals, Math.max(totalGoals-doneGoals,0)] }] }, options:{ responsive:true, plugins:{ legend:{ display:false } } });
-    }
+        // Drag and drop functionality
+        function initializeDragAndDrop() {
+            const draggables = document.querySelectorAll('.draggable');
+            const containers = document.querySelectorAll('.board-column > div');
 
-    // ====== NOTIFICATIONS ======
-    function requestNotification(){ if('Notification' in window) Notification.requestPermission(); }
-    function notify(title, body){ if('Notification' in window && Notification.permission==='granted'){ new Notification(title,{ body }); } }
-    function checkUpcomingNotifications(){
-      if(!('Notification' in window) || Notification.permission!=='granted') return;
-      const now = new Date();
-      const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate()+1);
-      const tStr = tomorrow.toISOString().split('T')[0];
-      const list = [ ...state.items.goal, ...state.items.date, ...state.items.finance ];
-      list.filter(x=>x.dueDate===tStr).forEach(x=> notify('Lembrete para amanhã', x.title));
-    }
+            draggables.forEach(draggable => {
+                draggable.addEventListener('dragstart', () => {
+                    draggable.classList.add('dragging');
+                });
 
-    // ====== TABS ======
-    function switchTab(e){
-      document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active','bg-indigo-600','text-white'));
-      e.currentTarget.classList.add('active','bg-indigo-600','text-white');
-      const t = e.currentTarget.dataset.tab;
-      ['board','calendar','analytics','settings'].forEach(id=>{
-        document.getElementById('tab-'+id).classList.toggle('hidden-el', id!==t);
-      });
-      if(t==='analytics') updateCharts();
-      if(t==='calendar') buildCalendar();
-    }
+                draggable.addEventListener('dragend', () => {
+                    draggable.classList.remove('dragging');
+                });
+            });
 
-    // ====== EXPORT/IMPORT ======
-    function exportJSON(){
-      const data = localStorage.getItem('lifeOrganizer') || JSON.stringify({items:state.items,notes:state.notes,theme:state.theme});
-      const blob = new Blob([data],{type:'application/json'});
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a'); a.href=url; a.download='life-organizer-backup.json'; a.click(); URL.revokeObjectURL(url);
-    }
-    function importJSON(e){
-      const file = e.target.files[0]; if(!file) return;
-      const reader = new FileReader(); reader.onload = (ev)=>{ try{ localStorage.setItem('lifeOrganizer', ev.target.result); loadData(); renderAll(); buildCalendar(); updateCharts(); }catch(err){ alert('Falha ao importar'); } };
-      reader.readAsText(file);
-    }
-  </script>
+            containers.forEach(container => {
+                container.addEventListener('dragover', e => {
+                    e.preventDefault();
+                    const afterElement = getDragAfterElement(container, e.clientY);
+                    const draggable = document.querySelector('.dragging');
+                    
+                    if (!afterElement) {
+                        container.appendChild(draggable);
+                    } else {
+                        container.insertBefore(draggable, afterElement);
+                    }
+                });
+            });
+
+            function getDragAfterElement(container, y) {
+                const draggableElements = [...container.querySelectorAll('.draggable:not(.dragging)')];
+                
+                return draggableElements.reduce((closest, child) => {
+                    const box = child.getBoundingClientRect();
+                    const offset = y - box.top - box.height / 2;
+                    
+                    if (offset < 0 && offset > closest.offset) {
+                        return { offset: offset, element: child };
+                    } else {
+                        return closest;
+                    }
+                }, { offset: Number.NEGATIVE_INFINITY }).element;
+            }
+        }
+
+        // Form to add new tasks
+        function setupTaskForms() {
+            const addButtons = document.querySelectorAll('button');
+            
+            addButtons.forEach(button => {
+                button.addEventListener('click', (e) => {
+                    if (e.target.textContent.includes('Adicionar')) {
+                        const columnType = e.target.textContent.split(' ')[1].toLowerCase();
+                        const containerId = columnType === 'meta' ? 'goals-column' : 
+                                          columnType === 'data' ? 'dates-column' : 'finance-column';
+                        
+                        const newTask = document.createElement('div');
+                        newTask.className = 'task-card p-3 rounded-lg bg-white dark:bg-gray-700 shadow-sm draggable';
+                        newTask.draggable = true;
+                        newTask.innerHTML = `
+                            <h3 contenteditable="true" class="font-medium">Nova ${columnType}</h3>
+                            <p contenteditable="true" class="text-sm text-gray-600 dark:text-gray-300">Descrição</p>
+                            <div class="mt-2 flex justify-between items-center">
+                                <span class="text-xs px-2 py-1 bg-gray-100 dark:bg-gray-900 text-gray-600 dark:text-gray-300 rounded">Categoria</span>
+                                <span class="text-xs text-gray-500">${new Date().toLocaleDateString('pt-BR')}</span>
+                            </div>
+                        `;
+                        
+                        document.getElementById(containerId).prepend(newTask);
+                        
+                        // Reinitialize drag and drop for new element
+                        initializeDragAndDrop();
+                    }
+                });
+            });
+        }
+
+        // Initialize all functionality
+        document.addEventListener('DOMContentLoaded', () => {
+            updateTheme();
+            updateClock();
+            updateWeather();
+            initializeDragAndDrop();
+            setupTaskForms();
+            
+            // Update clock every second
+            setInterval(updateClock, 1000);
+            
+            // Check for theme changes every minute
+            setInterval(updateTheme, 60000);
+        });
+    </script>
 </body>
 </html>
